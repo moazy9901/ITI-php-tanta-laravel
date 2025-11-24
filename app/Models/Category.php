@@ -5,25 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Product extends Model
+class Category extends Model
 {
-    /** @use HasFactory<\Database\Factories\ProductFactory> */
+    /** @use HasFactory<\Database\Factories\CategoryFactory> */
     use HasFactory;
     protected $fillable = [
-        'name',
+        'slug',
         'description',
-        'price',
         'image',
-        'stock_quantity',
-        'is_active',
-        'created_by',
-        'category_id'
+        'created_by'
     ];
 
     function creator(){
         return $this->belongsTo(User::class , 'created_by');
     }
-    function category(){
-        return $this->belongsTo(Category::class , 'category_id');
+    function products(){
+        return $this->hasMany(Product::class);
     }
 }

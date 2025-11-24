@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
+use App\Http\Requests\UpdateProductRequest;
+use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -14,7 +18,8 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::latest()->paginate(10);
-        return view('products.index' , compact('products'));
+         $categories = Category::all();
+        return view('products.index' , compact('products' , 'categories'));
     }
 
     /**
@@ -22,7 +27,8 @@ class ProductController extends Controller
      */
     public function create()
     {
-         return view('products.create');
+         $categories = Category::all();
+        return view('products.create', compact('categories'));
     }
 
     /**
@@ -30,27 +36,17 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        // بيانات الـ validated
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
-    $imageName = time() . '.' . $request->image->getClientOriginalExtension();
+        $imageName = time() . '.' . $request->image->getClientOriginalExtension();
+        $request->image->storeAs('products', $imageName, 'public');
+        $data['image'] = $imageName;
+        }
 
-    // يحفظ داخل storage/app/public/products
-    $request->image->storeAs('products', $imageName, 'public');
-
-    // نخزن فقط اسم الصورة أو المسار في قاعدة البيانات
-    $data['image'] = $imageName;
-}
-
-
-        // إذا لم يتم إرسال is_active من checkbox، اجعلها false
         $data['is_active'] = $request->has('is_active') ? true : false;
-
-        // إنشاء المنتج
+        $data['created_by'] = Auth::id();
         Product::create($data);
-
-        // إعادة التوجيه مع رسالة نجاح
         return redirect()->route('products.index')
                          ->with('success', 'Product created successfully!');
     }
@@ -60,7 +56,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-         return view('products.show');
+         return view('products.show' , compact('product'));
     }
 
     /**
@@ -68,15 +64,40 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-         return view('products.edit');
+        $categories = Category::all();
+        return view('products.edit' , compact('product' , 'categories'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product $product)
+    public function update(UpdateProductRequest $request, Product $product)
     {
-        //
+        $data = $request->validated();
+        if ($request->hasFile('image')) {
+            if ($product->image && Storage::disk('public')->exists("products/$product->image")) {
+                Storage::disk('public')->delete("products/$product->image");
+            }
+    $imageName = time() . '.' . $request->image->getClientOriginalExtension();
+
+    // يحفظ داخل storage/app/public/products
+    $request->image->storeAs('products', $imageName, 'public');
+
+    // نخزن فقط اسم الصورة أو المسار في قاعدة البيانات
+    $data['image'] = $imageName;
+                                                }
+
+
+        // إذا لم يتم إرسال is_active من checkbox، اجعلها false
+        $data['is_active'] = $request->has('is_active') ? true : false;
+
+        // إنشاء المنتج
+        $product->update($data);
+
+        // إعادة التوجيه مع رسالة نجاح
+        return redirect()->route('products.index')
+                         ->with('success', 'Product update successfully!');
+
     }
 
     /**
@@ -84,6 +105,12 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+         if ($product->image && file_exists(storage_path('app/public/products/' . $product->image))) {
+            unlink(storage_path('app/public/products/' . $product->image));
+        }
+
+        $product->delete();
+        return redirect()->route('products.index')
+            ->with('success', 'product deleted successfully!');
     }
 }
