@@ -8,6 +8,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
@@ -18,7 +19,7 @@ class CategoryController extends Controller
     public function index()
     {
         $categories = Category::latest()->paginate(10);
-        return view('categories.index' , compact('categories'));
+        return view('categories.index', compact('categories'));
     }
 
     /**
@@ -36,16 +37,16 @@ class CategoryController extends Controller
     {
         // dd($request);
         $request_data = $request->validated();
-        if($request->hasFile('image')){
+        if ($request->hasFile('image')) {
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();
-            $request->image->storeAs('categories' , $imageName , 'public');
-            $request_data['image']=$imageName;
+            $request->image->storeAs('categories', $imageName, 'public');
+            $request_data['image'] = $imageName;
         }
         $request_data['created_by'] = Auth::id();
         // dd($request_data);
         Category::create($request_data);
 
-          return redirect()->route('categories.index')
+        return redirect()->route('categories.index')
             ->with('success', 'category deleted successfully!');
     }
 
@@ -54,7 +55,7 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        return view('categories.show' , compact('category'));
+        return view('categories.show', compact('category'));
     }
 
     /**
@@ -62,7 +63,7 @@ class CategoryController extends Controller
      */
     public function edit(Category $category)
     {
-        return view('categories.edit' , compact('category'));
+        return view('categories.edit', compact('category'));
     }
 
     /**
@@ -71,14 +72,14 @@ class CategoryController extends Controller
     public function update(UpdateCategoryRequest $request, Category $category)
     {
         $request_data = $request->validated();
-        if($request->hasFile('image')){
+        if ($request->hasFile('image')) {
 
-            if($category->image && Storage::disk('public')->exists("categories/$category->image")){
+            if ($category->image && Storage::disk('public')->exists("categories/$category->image")) {
                 Storage::disk('public')->delete("categories/$category->image");
             }
             $imageName = time() . '.' . $request->image->getClientOriginalExtension();
-            $request->image->storeAs('categories' , $imageName , 'public');
-            $request_data['image']=$imageName;
+            $request->image->storeAs('categories', $imageName, 'public');
+            $request_data['image'] = $imageName;
         }
         $request_data['created_by'] = Auth::id();
         $category->update($request_data);
@@ -92,10 +93,16 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-            if($category->image && Storage::disk('public')->exists("categories/$category->image")){
-                Storage::disk('public')->delete("categories/$category->image");
-            }
-            $category->delete();
+        //gates
+        if (! Gate::allows('delete-category', $category)) {
+            abort(403);
+        }
+
+
+        if ($category->image && Storage::disk('public')->exists("categories/$category->image")) {
+            Storage::disk('public')->delete("categories/$category->image");
+        }
+        $category->delete();
         return redirect()->route('categories.index')
             ->with('success', 'category deleted successfully!');
     }

@@ -27,10 +27,24 @@
                 </header>
             @endisset
 
+
             <!-- Page Content -->
             <main>
                 {{ $slot }}
+                 {{-- notification  --}}
+            @if (session('success'))
+            <div id="toast-success"
+                class="fixed top-5 right-5 flex items-center w-full max-w-xs p-4 mb-4 text-green-800 bg-green-200 rounded-lg shadow">
+                <span class="ml-3 text-sm font-medium">{{ session('success') }}</span>
+            </div>
+            <script>
+                setTimeout(() => {
+                    document.getElementById('toast-success').style.display = 'none';
+                }, 3000);
+            </script>
+            @endif
             </main>
         </div>
+
     </body>
 </html>
