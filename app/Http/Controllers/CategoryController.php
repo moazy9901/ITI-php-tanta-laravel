@@ -6,18 +6,25 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
 use App\Models\Product;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+
 
 class CategoryController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
+
+
+
     public function index()
     {
+
         $categories = Category::latest()->paginate(10);
         return view('categories.index', compact('categories'));
     }
@@ -47,7 +54,7 @@ class CategoryController extends Controller
         Category::create($request_data);
 
         return redirect()->route('categories.index')
-            ->with('success', 'category deleted successfully!');
+            ->with('success', 'category created successfully!');
     }
 
     /**
@@ -68,9 +75,23 @@ class CategoryController extends Controller
 
     /**
      * Update the specified resource in storage.
-     */
+    */
     public function update(UpdateCategoryRequest $request, Category $category)
     {
+        // Gate::authorize('update', $category);
+        try {
+        // Check Policy
+       Gate::authorize('update', $category);
+
+    } catch (AuthorizationException $e) {
+
+        // Redirect if policy fails
+        return redirect()
+            ->route('categories.index')
+            ->with('success',$e->getMessage())
+            ->with('type', 'error');
+    }
+
         $request_data = $request->validated();
         if ($request->hasFile('image')) {
 
@@ -85,12 +106,12 @@ class CategoryController extends Controller
         $category->update($request_data);
 
         return redirect()->route('categories.index')
-            ->with('success', 'category deleted successfully!');
+        ->with('success', 'category updated successfully!');
     }
 
     /**
      * Remove the specified resource from storage.
-     */
+    */
     public function destroy(Category $category)
     {
         //gates
@@ -105,5 +126,5 @@ class CategoryController extends Controller
         $category->delete();
         return redirect()->route('categories.index')
             ->with('success', 'category deleted successfully!');
-    }
+        }
 }

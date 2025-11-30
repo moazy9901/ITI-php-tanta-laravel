@@ -9,12 +9,23 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class ProductController extends Controller
+class ProductController extends Controller  implements HasMiddleware
 {
     /**
      * Display a listing of the resource.
      */
+
+     //define medileware
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('validMinSevenCahr', ['update' , 'store']), // Apply 'log' only to 'index'
+        ];
+    }
+
     public function index()
     {
         $products = Product::latest()->paginate(10);

@@ -20,9 +20,18 @@
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                <header class="bg-white shadow flex px-20">
+                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8 w-1/2 flex justify-start items-center">
                         {{ $header }}
+                    </div>
+                     <!-- Add Product Button -->
+                     <div class=" w-1/2 flex justify-end items-center">
+                        @can('create-product')
+                        <a href="{{ route('products.create') }}"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition">
+                        Add Product
+                    </a>
+                    @endcan
                     </div>
                 </header>
             @endisset
@@ -34,7 +43,8 @@
                  {{-- notification  --}}
             @if (session('success'))
             <div id="toast-success"
-                class="fixed top-5 right-5 flex items-center w-full max-w-xs p-4 mb-4 text-green-800 bg-green-200 rounded-lg shadow">
+                class="fixed top-5 right-5 flex items-center w-full max-w-xs p-4 mb-4 {{ session('type') === 'error' ? 'bg-red-500 text-white' : 'bg-green-500 text-white' }}
+   rounded-lg shadow">
                 <span class="ml-3 text-sm font-medium">{{ session('success') }}</span>
             </div>
             <script>
